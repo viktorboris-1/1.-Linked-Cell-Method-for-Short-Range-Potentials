@@ -1,10 +1,13 @@
+import math
+import turtle
+
 class Particle:
-    def __init__(self, mass, position, velocity, force):
+    def __init__(self, mass, position, velocity, force, DIM):
         self.mass = mass
         self.position = position
         self.velocity = velocity
         self.force = force
-        self.old_force = [None] * DIM
+        self.old_force = [0] * DIM
 
 
 class ParticleNode:
@@ -27,25 +30,19 @@ class ParticleList:
             new_particle_node.next_particle = self.head
             self.head = new_particle_node
 
-    def delete_particle(self):
-        """TODO"""
+    def delete_particle(self, particle_node_to_delete):
+        current_node = self.head
+        last_node = None
+        if current_node == particle_node_to_delete:
+            self.head = current_node.next_particle
+            return
+        
+        while current_node != None and current_node != particle_node_to_delete:
+            last_node = current_node
+            current_node = current_node.next_particle
 
-class Simulation:
-    DIM = 2
-    num_cells = [None] * DIM
-    input_file = open('Simulation_Parameters', 'r')
-    params = input_file.readlines()
-    N = params[0]
-    pnc = 1
-    dimensions = params[1].split(',')
-    r_cut = params[2]
-    delta_t = params[3]
-    t_end = params[4]
-    def __init__(self, parameter_input_file):
-        input_file = open(parameter_input_file, 'r')
-        self.DIM = input_file.readline().split(":")[1]
-        self.num_cells = input_file.readline().split(":")[1].split()
-        self.DIM = input_file.readline().split(":")[1]
-        self.DIM = input_file.readline().split(":")[1]
-        self.DIM = input_file.readline().split(":")[1]
+        if current_node is None:
+            return
+        else:
+            last_node.next_particle = current_node.next_particle
 

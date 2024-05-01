@@ -1,0 +1,8 @@
+DIM:2
+num_cells:5,6
+dimensions:1000,1000
+r_cut:2.5
+delta_t:0.05
+t_end:10
+sigma:1
+epsilon:5
