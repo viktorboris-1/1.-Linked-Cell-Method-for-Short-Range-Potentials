@@ -77,10 +77,10 @@ class Simulation:
         
 
     def display_system(self):
-        turtle.setup(400,400)
+        turtle.setup(1000,1000)
         turtle.speed("fastest")
         turtle.tracer(0,0)
-        window = turtle.Screen()
+        #window = turtle.Screen()
         simulation = turtle.Turtle()
         simulation.hideturtle()
         simulation.color("blue")
@@ -94,15 +94,13 @@ class Simulation:
                 simulation.dot()
                 current_particle_node = current_particle_node.next_particle
         turtle.update()
+        turtle.mainloop()
         
-        window.exitonclick()
 
     def time_integration_basis(self, t, delta_t, t_end, grid, num_cells, domain_dimensions, cutoff_rad, DIM, sigma, epsilon):
         self.compute_force_LC(grid, num_cells, domain_dimensions, cutoff_rad, DIM, sigma, epsilon)
-        i = 0
         while t < t_end:
             t += delta_t
-            i += 1
             self.compute_position_LC(grid, num_cells, domain_dimensions, delta_t, DIM)
             self.compute_force_LC(grid, num_cells, domain_dimensions, cutoff_rad, DIM, sigma, epsilon)
             self.compute_velocity_LC(grid, num_cells, delta_t, DIM)
@@ -132,6 +130,7 @@ class Simulation:
                                                 r += (current_particle_node.particle.position[d] - second_particle_node.particle.position[d]) ** 2
                                             if r <= cutoff_rad:
                                                 self.force(current_particle_node, second_particle_node, DIM, sigma, epsilon)   
+                                                print("A" + current_particle_node.particle.force)
                                         second_particle_node = second_particle_node.next_particle
                             except:
                                 print("Oh NO")
@@ -150,7 +149,6 @@ class Simulation:
 
 
     def compute_position_LC(self, grid, num_cells, domain_dimensions, delta_t, DIM):
-        i = 0
         for x in range(num_cells[0]):
             for y in range(num_cells[1]):
                 cell_multi_index = [x, y]
@@ -158,7 +156,6 @@ class Simulation:
                 while current_particle_node is not None:
                     self.update_position(current_particle_node.particle, delta_t, DIM)
                     current_particle_node = current_particle_node.next_particle
-                    i += 1
         self.move_particles_LC(grid, num_cells, domain_dimensions, DIM)
 
 
@@ -233,12 +230,9 @@ class Simulation:
         return
 
 if __name__ == "__main__":
-    #sim = Simulation(paramater_input_file)
-    #sim.load_particles(particle_input_file)
-    #time_integration_basis(0, sim.delta_t, sim.t_end, sim.grid, sim.num_cells, sim.dimensions, sim.r_cut, sim.DIM, sim.sigma, sim.epsilon)
     sim = Simulation('Parameters.txt')
-    sim.particle_block(1,[50,50],[0,-10],1,40,40) #changing this offset somehow causes a nodeparticle to be added where a particle should go
-    sim.particle_block(1,[0,],[0,-10],1,160,40)
+    sim.particle_block(1,[200,240],[0,-10],1,20,20) 
+    sim.particle_block(1,[204,200],[0,0],1,5,5)
     sim.display_system()
-    #sim.time_integration_basis(0, sim.delta_t, sim.t_end, sim.grid, sim.num_cells, sim.dimensions, sim.r_cut, sim.DIM, sim.sigma, sim.epsilon)
+    sim.time_integration_basis(0, sim.delta_t, sim.t_end, sim.grid, sim.num_cells, sim.dimensions, sim.r_cut, sim.DIM, sim.sigma, sim.epsilon)
     sim.display_system()
