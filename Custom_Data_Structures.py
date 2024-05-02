@@ -25,10 +25,12 @@ class ParticleList:
         new_particle_node = ParticleNode(new_particle)
         if self.head is None:
             self.head = new_particle_node
+            self.count += 1
             return
         else:
             new_particle_node.next_particle = self.head
             self.head = new_particle_node
+            self.count += 1
 
     def delete_particle(self, particle_node_to_delete):
         current_node = self.head
