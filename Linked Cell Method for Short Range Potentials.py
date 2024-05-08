@@ -127,17 +127,18 @@ class Simulation:
                         for y_offset in offsets: 
                             neighbor_multi_index = [x + x_offset, y + y_offset]
 
-                            if self.particle_cell_distance(current_particle_node, neighbor_multi_index, DIM, num_cells, domain_dimensions) <= cutoff_rad:
-                                second_particle_node = grid[self.index(neighbor_multi_index, num_cells)].head
-                                while second_particle_node is not None:
-                                    if current_particle_node != second_particle_node:
-                                        r = 0
-                                        for d in range(DIM):
-                                            r += (current_particle_node.particle.position[d] - second_particle_node.particle.position[d]) ** 2
-                                        if r <= cutoff_rad:
-                                            self.force(current_particle_node, second_particle_node, DIM, sigma, epsilon)   
-                                            print("A" + current_particle_node.particle.force)
-                                    second_particle_node = second_particle_node.next_particle
+                            #print(self.particle_cell_distance(current_particle_node, neighbor_multi_index, DIM, num_cells, domain_dimensions))
+
+                            #if self.particle_cell_distance(current_particle_node, neighbor_multi_index, DIM, num_cells, domain_dimensions) <= cutoff_rad:
+                            second_particle_node = grid[self.index(neighbor_multi_index, num_cells)].head
+                            while second_particle_node is not None:
+                                if current_particle_node != second_particle_node:
+                                    r = 0
+                                    for d in range(DIM):
+                                        r += (current_particle_node.particle.position[d] - second_particle_node.particle.position[d]) ** 2
+                                    if r <= cutoff_rad:
+                                        self.force(current_particle_node, second_particle_node, DIM, sigma, epsilon)   
+                                second_particle_node = second_particle_node.next_particle
                     current_particle_node = current_particle_node.next_particle
     
 
