@@ -1,6 +1,3 @@
-import math
-import turtle
-
 class Particle:
     def __init__(self, mass, position, velocity, force, DIM):
         self.mass = mass
@@ -8,6 +5,7 @@ class Particle:
         self.velocity = velocity
         self.force = force
         self.old_force = [0] * DIM
+        self.old_positions = []
 
 
 class ParticleNode:

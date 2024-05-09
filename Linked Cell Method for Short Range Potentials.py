@@ -1,6 +1,8 @@
 import math
 import turtle
 from Custom_Data_Structures import Particle, ParticleList
+from matplotlib import pyplot as plt
+from matplotlib import animation 
 
 
 class Simulation:
@@ -33,8 +35,6 @@ class Simulation:
             for y in range(self.num_cells[1]):
                 self.grid.append(ParticleList())
 
-        self.sim_history = []
-
 
     def index(self, multi_index):
         if len(multi_index) == 2:
@@ -52,58 +52,48 @@ class Simulation:
                 for d in range(len(position)):
                     multi_index.append(math.floor((position[d]/self.dimensions[d]) * self.num_cells[d]))
                 self.grid[self.index(multi_index)].insert_particle(Particle(mass, position, velocity, [0,0], 2))
-        
 
-    def display_system(self):
-        turtle.setup(500,500)
-        turtle.speed("fastest")
-        turtle.tracer(0,0)
+    def update(self, frames, scat, all_particles_list):
+        x_offsets = []
+        y_offsets = []
+        for particle in all_particles_list:
+            x_offsets.append(particle.old_positions[frames][0])
+            y_offsets.append(particle.old_positions[frames][1])
+        scat.set_offsets([x_offsets, y_offsets])
+        print("Here")
 
-        simulation = turtle.Turtle()
-        simulation.hideturtle()
-        simulation.color("blue")
-        simulation.penup()
+        return scat
         
-        for grid in self.sim_history:
-            turtle.reset()
-            for particle_list in grid:
-                current_particle_node = particle_list.head
-                while current_particle_node != None:
-                    current_particle = current_particle_node.particle
-                    print(current_particle.position)
-                    simulation.goto(current_particle.position[0], current_particle.position[1])
-                    simulation.dot()
-                    current_particle_node = current_particle_node.next_particle
-            turtle.update()        
-        turtle.exitonclick()
         
-
-    def draw_domain(self):
-        turtle.setup(500,500)
-        turtle.speed("fastest")
-        turtle.tracer(0,0)
-        #window = turtle.Screen()
-        simulation = turtle.Turtle()
-        simulation.hideturtle()
-        simulation.color("blue")
-        simulation.penup()
     
+    def visualize(self):
+        all_particles_list = []
         for particle_list in self.grid:
             current_particle_node = particle_list.head
             while current_particle_node != None:
-                current_particle = current_particle_node.particle
-                print(current_particle.position)
-                simulation.goto(current_particle.position[0], current_particle.position[1])
-                simulation.dot()
+                all_particles_list.append(current_particle_node.particle)
                 current_particle_node = current_particle_node.next_particle
-    
-        turtle.exitonclick()
+
+        x_initial = []
+        y_initial = []
+        for particle in all_particles_list:
+            x_initial.append(particle.old_positions[0][0])
+            y_initial.append(particle.old_positions[0][1])
+        
+        fig = plt.figure()
+        ax = plt.subplot()
+        scat = ax.scatter(x_initial, y_initial, c='b', s=5)
+        frames=len(all_particles_list[0].old_positions[0])
+        ax.set(xlim=[0, 500], ylim =[0,500])
+        anim = animation.FuncAnimation(fig=fig, func=self.update, frames=int(self.t_end-self.t_start)/self.delta_t))
+        plt.show()
+
+       
             
         
     def time_integration_basis(self):
         self.compute_force_LC()
         while self.t_start < self.t_end:
-            self.sim_history.append(self.grid)
             self.t_start += self.delta_t
             self.compute_position_LC()
             self.compute_force_LC()
@@ -158,9 +148,12 @@ class Simulation:
 
     def update_position(self, particle):
         a = self.delta_t * 0.5 / particle.mass
+        old_position = []
         for d in range(self.DIM):
+            old_position.append(particle.position[d])
             particle.position[d] += self.delta_t * (particle.velocity[d] + a * particle.force[d])
             particle.old_force[d] = particle.force[d]
+        particle.old_positions.append(old_position)
 
 
     def compute_velocity_LC(self):
@@ -226,5 +219,5 @@ if __name__ == "__main__":
     sim = Simulation('Parameters.txt')
     sim.particle_block([200,240],[0,-10],1,4,4) 
     sim.particle_block([204,200],[0,0],1,20,20)
-    sim.time_integration_basis(0)
-    sim.draw_domain()
+    sim.time_integration_basis()
+    sim.visualize()

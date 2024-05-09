@@ -2,7 +2,7 @@ DIM:2
 num_cells:350,350
 dimensions:1000,1000
 r_cut:2.5
-delta_t:0.005
+delta_t:0.5
 t_end:2.5
 sigma:1
 epsilon:5
