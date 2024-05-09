@@ -53,15 +53,14 @@ class Simulation:
                     multi_index.append(math.floor((position[d]/self.dimensions[d]) * self.num_cells[d]))
                 self.grid[self.index(multi_index)].insert_particle(Particle(mass, position, velocity, [0,0], 2))
 
-    def update(self, frames, scat, all_particles_list):
+    def update(self, frame, scat, all_particles_list):
         x_offsets = []
         y_offsets = []
+        print(frame)
         for particle in all_particles_list:
-            x_offsets.append(particle.old_positions[frames][0])
-            y_offsets.append(particle.old_positions[frames][1])
+            x_offsets.append(particle.old_positions[frame][0])
+            y_offsets.append(particle.old_positions[frame][1])
         scat.set_offsets([x_offsets, y_offsets])
-        print("Here")
-
         return scat
         
         
@@ -85,7 +84,7 @@ class Simulation:
         scat = ax.scatter(x_initial, y_initial, c='b', s=5)
         frames=len(all_particles_list[0].old_positions[0])
         ax.set(xlim=[0, 500], ylim =[0,500])
-        anim = animation.FuncAnimation(fig=fig, func=self.update, frames=int(self.t_end-self.t_start)/self.delta_t))
+        anim = animation.FuncAnimation(fig=fig, func=self.update, frames=3, fargs=(scat, all_particles_list), interval=500, repeat=False)
         plt.show()
 
        
