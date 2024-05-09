@@ -6,3 +6,4 @@ delta_t:0.005
 t_end:2.5
 sigma:1
 epsilon:5
+t_start:0

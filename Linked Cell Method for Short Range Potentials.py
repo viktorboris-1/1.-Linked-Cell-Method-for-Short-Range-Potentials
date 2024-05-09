@@ -1,12 +1,14 @@
 import math
 import turtle
-from Custom_Data_Structures import Particle, ParticleList, ParticleNode
+from Custom_Data_Structures import Particle, ParticleList
 
 
 class Simulation:
 
+
     def __init__(self, parameter_input_file):
         input_file = open(parameter_input_file, 'r')
+
         self.DIM = int(input_file.readline().split(':')[1][:-1:])
 
         num_cells = input_file.readline().split(":")[1][:-1:].split(',')
@@ -24,6 +26,7 @@ class Simulation:
         self.t_end = float(input_file.readline().split(':')[1])
         self.sigma = float(input_file.readline().split(':')[1])
         self.epsilon = float(input_file.readline().split(':')[1])
+        self.t_start = float(input_file.readline().split(":")[1])
         
         self.grid = []
         for x in range(self.num_cells[0]):
@@ -32,16 +35,16 @@ class Simulation:
 
         self.sim_history = []
 
-            
+
     def index(self, multi_index):
         if len(multi_index) == 2:
             return multi_index[0] + self.num_cells[0] * multi_index[1]
         else:
             return multi_index[0] + self.num_cells[0] * (multi_index[1] + self.num_cells[1] * multi_index[2])
-        
+
+
     def particle_block(self, bottom_left_corner, velocity, mass, x_len, y_len):
         offset = (2 ** (1/6)) * self.sigma
-
         for x in range(x_len):
             for y in range(y_len):
                 position = [bottom_left_corner[0] + (x * offset), bottom_left_corner[1] + (y* offset)]
@@ -55,12 +58,11 @@ class Simulation:
         turtle.setup(500,500)
         turtle.speed("fastest")
         turtle.tracer(0,0)
-        #window = turtle.Screen()
+
         simulation = turtle.Turtle()
         simulation.hideturtle()
         simulation.color("blue")
         simulation.penup()
-        
         
         for grid in self.sim_history:
             turtle.reset()
@@ -75,6 +77,7 @@ class Simulation:
             turtle.update()        
         turtle.exitonclick()
         
+
     def draw_domain(self):
         turtle.setup(500,500)
         turtle.speed("fastest")
@@ -97,20 +100,16 @@ class Simulation:
         turtle.exitonclick()
             
         
-
-    def time_integration_basis(self, t):
+    def time_integration_basis(self):
         self.compute_force_LC()
-        while t < self.t_end:
+        while self.t_start < self.t_end:
             self.sim_history.append(self.grid)
-            t += self.delta_t
+            self.t_start += self.delta_t
             self.compute_position_LC()
             self.compute_force_LC()
             self.compute_velocity_LC()
-            print(t)
             
 
-            
-    
     def compute_force_LC(self):
         offsets = [-1, 0, 1]
         for x in range(self.num_cells[0]):
@@ -196,7 +195,6 @@ class Simulation:
 
                     current_particle_node = current_particle_node.next_particle
         
-
 
     def particle_cell_distance(self, current_particle_node, cell_index):
         cell_center_position = [0] * self.DIM
