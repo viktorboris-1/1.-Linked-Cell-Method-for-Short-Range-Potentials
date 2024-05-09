@@ -31,42 +31,16 @@ class Simulation:
                 self.grid.append(ParticleList())
 
         self.sim_history = []
-        
 
-    
-    def load_particles(self, particle_input_file):
-        for x in range(self.num_cells[0]):
-            for y in range(self.num_cells[1]):
-                self.grid.append(ParticleList())
-
-        input_file = open(particle_input_file, 'r')
-        particles = input_file.readlines()
-
-        for particle in particles:
-            params = particle.split(',')
-            mass = params[0]
-            position = [params[1], params[2]]
-            velocity = [params[3], params[4]]
-            force = [params[5], params[6]]
-
-            multi_index = []
-
-            #Add 3D
-
-            for d in range(len(position)):
-                multi_index.append(math.floor((position[d]/self.dimensions[d]) * self.num_cells[d]))
             
-            self.grid[self.index(multi_index, self.num_cells)] = ParticleList.insert_particle(Particle(mass, position, velocity, force, 2))
-            
-
-    def index(self, multi_index, num_cells):
+    def index(self, multi_index):
         if len(multi_index) == 2:
-            return multi_index[0] + num_cells[0] * multi_index[1]
+            return multi_index[0] + self.num_cells[0] * multi_index[1]
         else:
-            return multi_index[0] + num_cells[0] * (multi_index[1] + num_cells[1] * multi_index[2])
+            return multi_index[0] + self.num_cells[0] * (multi_index[1] + self.num_cells[1] * multi_index[2])
         
-    def particle_block(self, sigma, bottom_left_corner, velocity, mass, x_len, y_len):
-        offset = (2 ** (1/6)) * sigma
+    def particle_block(self, bottom_left_corner, velocity, mass, x_len, y_len):
+        offset = (2 ** (1/6)) * self.sigma
 
         for x in range(x_len):
             for y in range(y_len):
@@ -74,7 +48,7 @@ class Simulation:
                 multi_index = []
                 for d in range(len(position)):
                     multi_index.append(math.floor((position[d]/self.dimensions[d]) * self.num_cells[d]))
-                self.grid[self.index(multi_index, self.num_cells)].insert_particle(Particle(mass, position, velocity, [0,0], 2))
+                self.grid[self.index(multi_index)].insert_particle(Particle(mass, position, velocity, [0,0], 2))
         
 
     def display_system(self):
@@ -87,129 +61,148 @@ class Simulation:
         simulation.color("blue")
         simulation.penup()
         
-  
+        
+        for grid in self.sim_history:
+            turtle.reset()
+            for particle_list in grid:
+                current_particle_node = particle_list.head
+                while current_particle_node != None:
+                    current_particle = current_particle_node.particle
+                    print(current_particle.position)
+                    simulation.goto(current_particle.position[0], current_particle.position[1])
+                    simulation.dot()
+                    current_particle_node = current_particle_node.next_particle
+            turtle.update()        
+        turtle.exitonclick()
+        
+    def draw_domain(self):
+        turtle.setup(500,500)
+        turtle.speed("fastest")
+        turtle.tracer(0,0)
+        #window = turtle.Screen()
+        simulation = turtle.Turtle()
+        simulation.hideturtle()
+        simulation.color("blue")
+        simulation.penup()
+    
         for particle_list in self.grid:
             current_particle_node = particle_list.head
             while current_particle_node != None:
                 current_particle = current_particle_node.particle
+                print(current_particle.position)
                 simulation.goto(current_particle.position[0], current_particle.position[1])
                 simulation.dot()
                 current_particle_node = current_particle_node.next_particle
-
-        turtle.update()
-        turtle.mainloop()
+    
+        turtle.exitonclick()
+            
         
 
-    def time_integration_basis(self, t, delta_t, t_end, grid, num_cells, domain_dimensions, cutoff_rad, DIM, sigma, epsilon):
-        self.compute_force_LC(grid, num_cells, domain_dimensions, cutoff_rad, DIM, sigma, epsilon)
-        while t < t_end:
+    def time_integration_basis(self, t):
+        self.compute_force_LC()
+        while t < self.t_end:
             self.sim_history.append(self.grid)
-            if t > 0.75:
-                self.display_system()
-            t += delta_t
-            self.compute_position_LC(grid, num_cells, domain_dimensions, delta_t, DIM)
-            self.compute_force_LC(grid, num_cells, domain_dimensions, cutoff_rad, DIM, sigma, epsilon)
-            self.compute_velocity_LC(grid, num_cells, delta_t, DIM)
+            t += self.delta_t
+            self.compute_position_LC()
+            self.compute_force_LC()
+            self.compute_velocity_LC()
             print(t)
             
 
             
     
-    def compute_force_LC(self, grid, num_cells, domain_dimensions, cutoff_rad, DIM, sigma, epsilon):
+    def compute_force_LC(self):
         offsets = [-1, 0, 1]
-        for x in range(num_cells[0]):
-            for y in range(num_cells[1]):
+        for x in range(self.num_cells[0]):
+            for y in range(self.num_cells[1]):
                 cell_multi_index = [x, y]
-                current_particle_node = grid[self.index(cell_multi_index, num_cells)].head
+                current_particle_node = self.grid[self.index(cell_multi_index)].head
                 while current_particle_node is not None:
-                    current_particle_node.particle.force = [0] * DIM
+                    current_particle_node.particle.force = [0] * self.DIM
                     for x_offset in offsets:
                         for y_offset in offsets: 
                             neighbor_multi_index = [x + x_offset, y + y_offset]
-
-                            #print(self.particle_cell_distance(current_particle_node, neighbor_multi_index, DIM, num_cells, domain_dimensions))
-
-                            #if self.particle_cell_distance(current_particle_node, neighbor_multi_index, DIM, num_cells, domain_dimensions) <= cutoff_rad:
-                            second_particle_node = grid[self.index(neighbor_multi_index, num_cells)].head
+                            
+                            second_particle_node = self.grid[self.index(neighbor_multi_index)].head
                             while second_particle_node is not None:
                                 if current_particle_node != second_particle_node:
                                     r = 0
-                                    for d in range(DIM):
+                                    for d in range(self.DIM):
                                         r += (current_particle_node.particle.position[d] - second_particle_node.particle.position[d]) ** 2
-                                    if r <= cutoff_rad:
-                                        self.force(current_particle_node, second_particle_node, DIM, sigma, epsilon)   
+                                    if r <= self.r_cut:
+                                        self.force(current_particle_node, second_particle_node)   
                                 second_particle_node = second_particle_node.next_particle
                     current_particle_node = current_particle_node.next_particle
     
 
-    def force(self, particle1, particle2, DIM, sigma, epsilon):
+    def force(self, particle1, particle2):
         # Lennard Jones Potential
         r = 0
-        for d in range(DIM):
+        for d in range(self.DIM):
             r += (particle1.particle.position[d] - particle2.particle.position[d]) ** 2
-        s = (sigma ** 2) / r
-        f = 24 * epsilon * s / r * (1 - 2 * s)
-        for d in range(DIM):
+        s = (self.sigma ** 2) / r
+        f = 24 * self.epsilon * s / r * (1 - 2 * s)
+        for d in range(self.DIM):
             particle1.particle.force[d] += f * (particle2.particle.position[d] - particle1.particle.position[d])
 
 
-    def compute_position_LC(self, grid, num_cells, domain_dimensions, delta_t, DIM):
-        for x in range(num_cells[0]):
-            for y in range(num_cells[1]):
+    def compute_position_LC(self):
+        for x in range(self.num_cells[0]):
+            for y in range(self.num_cells[1]):
                 cell_multi_index = [x, y]
-                current_particle_node = grid[self.index(cell_multi_index, num_cells)].head
+                current_particle_node = self.grid[self.index(cell_multi_index)].head
                 while current_particle_node is not None:
-                    self.update_position(current_particle_node.particle, delta_t, DIM)
+                    self.update_position(current_particle_node.particle)
                     current_particle_node = current_particle_node.next_particle
-        self.move_particles_LC(grid, num_cells, domain_dimensions, DIM)
+        self.move_particles_LC()
 
 
-    def update_position(self, particle, delta_t, DIM):
-        a = delta_t * 0.5 / particle.mass
-        for d in range(DIM):
-            particle.position[d] += delta_t * (particle.velocity[d] + a * particle.force[d])
+    def update_position(self, particle):
+        a = self.delta_t * 0.5 / particle.mass
+        for d in range(self.DIM):
+            particle.position[d] += self.delta_t * (particle.velocity[d] + a * particle.force[d])
             particle.old_force[d] = particle.force[d]
 
 
-    def compute_velocity_LC(self, grid, num_cells, delta_t, DIM):
-        for x in range(num_cells[0]):
-            for y in range(num_cells[1]):
+    def compute_velocity_LC(self):
+        for x in range(self.num_cells[0]):
+            for y in range(self.num_cells[1]):
                 cell_multi_index = [x, y]
-                current_particle_node = grid[self.index(cell_multi_index, num_cells)].head
+                current_particle_node = self.grid[self.index(cell_multi_index)].head
                 while current_particle_node is not None:
-                    self.update_velocity(current_particle_node.particle, delta_t, DIM)
+                    self.update_velocity(current_particle_node.particle)
                     current_particle_node = current_particle_node.next_particle
 
 
-    def update_velocity(self, particle, delta_t, DIM):
-        a = delta_t * 0.5 / particle.mass
-        for d in range(DIM):
+    def update_velocity(self, particle):
+        a = self.delta_t * 0.5 / particle.mass
+        for d in range(self.DIM):
             particle.velocity[d] += a * (particle.force[d] + particle.old_force[d])
 
 
-    def move_particles_LC(self, grid, num_cells, domain_dimensions, DIM):
-        next_index = [None] * DIM
-        for x in range(num_cells[0]):
-            for y in range(num_cells[1]):
-                current_particle_node = grid[self.index([x,y], num_cells)].head
+    def move_particles_LC(self):
+        next_index = [None] * self.DIM
+        for x in range(self.num_cells[0]):
+            for y in range(self.num_cells[1]):
+                current_particle_node = self.grid[self.index([x,y])].head
                 while current_particle_node is not None:
 
-                    for d in range(DIM):
-                        next_index[d] = math.floor((current_particle_node.particle.position[d] / domain_dimensions[d]) * num_cells[d])
+                    for d in range(self.DIM):
+                        next_index[d] = math.floor((current_particle_node.particle.position[d] / self.dimensions[d]) * self.num_cells[d])
                     
                     if next_index[0] != x or next_index[1] != y:
-                            grid[self.index([x,y], num_cells)].delete_particle(current_particle_node)
-                            grid[self.index(next_index, num_cells)].insert_particle(current_particle_node.particle)
+                            self.grid[self.index([x,y])].delete_particle(current_particle_node)
+                            self.grid[self.index(next_index)].insert_particle(current_particle_node.particle)
 
                     current_particle_node = current_particle_node.next_particle
         
 
 
-    def particle_cell_distance(self, current_particle_node, cell_index, DIM, num_cells, domain_dimensions):
-        cell_center_position = [0] * DIM
+    def particle_cell_distance(self, current_particle_node, cell_index):
+        cell_center_position = [0] * self.DIM
         for d in range(len(cell_center_position)):
-            cell_center_position[d] = 0.5 + cell_index[d] * (domain_dimensions[d]/num_cells[d])
-            if DIM == 2:
+            cell_center_position[d] = 0.5 + cell_index[d] * (self.dimensions[d]/self.num_cells[d])
+            if self.DIM == 2:
                 delta_x = current_particle_node.particle.position[0] - cell_center_position[0]
                 delta_y = current_particle_node.particle.position[1] - cell_center_position[1]
                 return math.sqrt((delta_x ** 2) + (delta_y ** 2))
@@ -220,23 +213,20 @@ class Simulation:
                 return math.sqrt((delta_x ** 2) + (delta_y ** 2) + (delta_z ** 2))
 
 
-    def isInBounds(self, particle_node, domain_dimensions, DIM):
+    def isInBounds(self, particle_node):
         particle = particle_node.particle
         position = particle.position
         particle_position = particle.position
-        for d in range(DIM):
-            if particle_position[d] < 0 or particle_position[d] > domain_dimensions[d]:
+        for d in range(self.DIM):
+            if particle_position[d] < 0 or particle_position[d] > self.dimensions[d]:
                 return False
             else:
                 return True
 
 
-    def output_results():
-        return
-
 if __name__ == "__main__":
     sim = Simulation('Parameters.txt')
-    sim.particle_block(1,[200,240],[0,-100],1,20,20) 
-    sim.particle_block(1,[204,200],[0,0],1,5,5)
-    sim.time_integration_basis(0, sim.delta_t, sim.t_end, sim.grid, sim.num_cells, sim.dimensions, sim.r_cut, sim.DIM, sim.sigma, sim.epsilon)
-    sim.display_system()
+    sim.particle_block([200,240],[0,-10],1,4,4) 
+    sim.particle_block([204,200],[0,0],1,20,20)
+    sim.time_integration_basis(0)
+    sim.draw_domain()
