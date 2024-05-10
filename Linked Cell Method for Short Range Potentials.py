@@ -3,6 +3,7 @@ import turtle
 from Custom_Data_Structures import Particle, ParticleList
 from matplotlib import pyplot as plt
 from matplotlib import animation 
+import numpy as np
 
 
 class Simulation:
@@ -60,7 +61,8 @@ class Simulation:
         for particle in all_particles_list:
             x_offsets.append(particle.old_positions[frame][0])
             y_offsets.append(particle.old_positions[frame][1])
-        scat.set_offsets([x_offsets, y_offsets])
+        data = np.stack((x_offsets, y_offsets)).T
+        scat.set_offsets(data)
         return scat
         
         
@@ -81,10 +83,10 @@ class Simulation:
         
         fig = plt.figure()
         ax = plt.subplot()
-        scat = ax.scatter(x_initial, y_initial, c='b', s=5)
-        frames=len(all_particles_list[0].old_positions[0])
-        ax.set(xlim=[0, 500], ylim =[0,500])
-        anim = animation.FuncAnimation(fig=fig, func=self.update, frames=3, fargs=(scat, all_particles_list), interval=500, repeat=False)
+        scat = ax.scatter(x_initial, y_initial, c='b', s=7)
+        ax.set(xlim=[100, 300], ylim =[100,300])
+        anim = animation.FuncAnimation(fig=fig, func=self.update, frames=[0,2000,4000,6000,8000,10000], fargs=(scat, all_particles_list),interval=200)
+        anim.save()
         plt.show()
 
        
@@ -92,8 +94,10 @@ class Simulation:
         
     def time_integration_basis(self):
         self.compute_force_LC()
-        while self.t_start < self.t_end:
-            self.t_start += self.delta_t
+        t = self.t_start
+        while t < self.t_end:
+            print(t)
+            t += self.delta_t
             self.compute_position_LC()
             self.compute_force_LC()
             self.compute_velocity_LC()
@@ -141,6 +145,8 @@ class Simulation:
                 current_particle_node = self.grid[self.index(cell_multi_index)].head
                 while current_particle_node is not None:
                     self.update_position(current_particle_node.particle)
+                    if self.isInBounds(current_particle_node) == False:
+                        self.grid[self.index(cell_multi_index)].delete_particle(current_particle_node)
                     current_particle_node = current_particle_node.next_particle
         self.move_particles_LC()
 
@@ -180,10 +186,12 @@ class Simulation:
 
                     for d in range(self.DIM):
                         next_index[d] = math.floor((current_particle_node.particle.position[d] / self.dimensions[d]) * self.num_cells[d])
-                    
-                    if next_index[0] != x or next_index[1] != y:
+                    try:
+                        if next_index[0] != x or next_index[1] != y:
                             self.grid[self.index([x,y])].delete_particle(current_particle_node)
                             self.grid[self.index(next_index)].insert_particle(current_particle_node.particle)
+                    except:
+                        print("Oh no")
 
                     current_particle_node = current_particle_node.next_particle
         
@@ -205,7 +213,6 @@ class Simulation:
 
     def isInBounds(self, particle_node):
         particle = particle_node.particle
-        position = particle.position
         particle_position = particle.position
         for d in range(self.DIM):
             if particle_position[d] < 0 or particle_position[d] > self.dimensions[d]:
@@ -216,7 +223,7 @@ class Simulation:
 
 if __name__ == "__main__":
     sim = Simulation('Parameters.txt')
-    sim.particle_block([200,240],[0,-10],1,4,4) 
-    sim.particle_block([204,200],[0,0],1,20,20)
+    sim.particle_block([205,220],[0,-10],1,4,4) 
+    sim.particle_block([200,200],[0,0],1,10,10)
     sim.time_integration_basis()
     sim.visualize()
