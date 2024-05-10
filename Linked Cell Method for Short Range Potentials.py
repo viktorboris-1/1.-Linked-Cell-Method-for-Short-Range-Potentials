@@ -1,5 +1,4 @@
 import math
-import turtle
 from Custom_Data_Structures import Particle, ParticleList
 from matplotlib import pyplot as plt
 from matplotlib import animation 
